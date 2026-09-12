@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="{{LANG}}" data-theme="{{DEFAULT_THEME}}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{DOC_TITLE}}</title>
+  <!-- Google Fonts (from design style file) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="{{FONTS_URL}}" rel="stylesheet">
+  <!-- No-JS fallback: force sections visible + show first tab panel -->
+  <noscript><style>.js-ready .section{opacity:1!important;transform:none!important;animation:none!important}.tab-panel:first-of-type{display:block!important}</style></noscript>
+  <!-- Chart.js (only if any chart widget is used — leave empty string if no charts) -->
+  {{CHARTJS_CDN}}
+  {{EXTRA_CDN}}
+  <style>
+/* ── Design tokens (agent-injected from design style file) ── */
+{{CSS_TOKENS}}
+
+/* ── CSS Foundation (auto-generated from html-conventions.md Section 3 — do not edit) ── */
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body, sans-serif);
+  font-size: clamp(14px, 2.5vw, 16px);
+  font-weight: 300;
+  line-height: 1.7;
+}
+
+/* ── Custom scrollbar ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--ink-20); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--ink-55); }
+
+/* ── Layout ── */
+.layout { display: flex; min-height: 100vh; }
+.main-wrap { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+/* ── Topbar ── */
+.topbar {
+  background: var(--surface);
+  border-bottom: 2px solid var(--accent);
+  position: sticky; top: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 1.25rem; height: 52px; gap: 1rem;
+}
+.topbar-left { display: flex; align-items: center; gap: .75rem; min-width: 0; }
+.topbar-title {
+  font-family: var(--font-display, sans-serif);
+  font-size: clamp(13px, 1.6vw, 16px); font-weight: 700;
+  color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.topbar-right { display: flex; align-items: center; gap: .5rem; flex-shrink: 0; }
+.topbar-meta { font-size: .75rem; color: var(--ink-55); display: flex; gap: .75rem; flex-wrap: wrap; }
+.topbar-meta span { white-space: nowrap; }
+.status-badge {
+  display: inline-flex; align-items: center;
+  padding: .15rem .6rem; border-radius: 100px;
+  font-size: .72rem; font-weight: 600; white-space: nowrap;
+  background: var(--info-bg, #dce8f4); color: var(--info, #1c63b8);
+}
+.topbar-btn {
+  background: transparent; border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 6px); color: var(--ink-55);
+  cursor: pointer; font-size: 1rem; line-height: 1;
+  padding: .3rem .5rem; transition: var(--transition, all .2s);
+}
+.topbar-btn:hover { color: var(--accent); border-color: var(--accent); background: var(--surface-2); }
+.hamburger-btn { display: none; }
+
+/* ── Sidebar ── */
+.sidebar {
+  width: 260px; flex-shrink: 0;
+  background: var(--surface); border-right: 1px solid var(--border);
+  position: sticky; top: 0; height: 100vh;
+  overflow-y: auto; transition: transform .3s ease;
+}
+.sidebar-inner { padding: 1.5rem 0 2.5rem; }
+.sidebar-brand {
+  font-family: var(--font-display, sans-serif);
+  font-size: 0.85rem; font-weight: 700; color: var(--ink-55);
+  padding: 0 1.25rem .75rem; border-bottom: 1px solid var(--border);
+  margin-bottom: .5rem; word-break: break-word;
+}
+.progress-track { height: 3px; background: var(--surface-2); margin: 0 0 .75rem; }
+.progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width .3s ease; }
+.nav-group-label {
+  font-size: 0.7rem; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--ink-20); padding: 0.75rem 1.25rem 0.25rem;
+}
+.nav-link {
+  display: block; padding: 0.35rem 1.25rem;
+  color: var(--ink-55); text-decoration: none;
+  font-size: 0.875rem; font-weight: 500;
+  border-left: 3px solid transparent; transition: var(--transition, color .15s);
+}
+.nav-link:hover, .nav-link.active {
+  color: var(--accent); border-left-color: var(--accent); background: var(--surface-2);
+}
+
+/* ── Header ── */
+.doc-header {
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 2rem 2.5rem 1.5rem;
+}
+.doc-title {
+  font-family: var(--font-display, sans-serif);
+  font-size: clamp(36px, 4.8vw, 58px); font-weight: 500;
+  letter-spacing: -0.02em; color: var(--ink); line-height: 1.15; margin-bottom: .5rem;
+}
+.doc-meta { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; font-size: .8rem; color: var(--ink-55); }
+
+/* ── Content ── */
+.content { flex: 1; padding: 2rem 2.5rem; max-width: 960px; margin: 0 auto; width: 100%; }
+/* Progressive enhancement: sections visible by default.
+   JS adds .js-ready to <html> on load — only then are sections hidden
+   and revealed by IntersectionObserver. A CSS-only @keyframes fallback
+   forces visibility after 1s even if JS dies mid-execution (iOS Files
+   Quick Look, restrictive WebViews). If JS works, .visible cancels
+   the animation. */
+.section {
+  margin-bottom: 4rem; scroll-margin-top: 4rem;
+}
+.js-ready .section {
+  opacity: 0; transform: translateY(16px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  animation: section-fallback 0s 1s forwards;
+}
+.js-ready .section.visible { opacity: 1; transform: translateY(0); animation: none; }
+@keyframes section-fallback { to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .js-ready .section { opacity: 1; transform: none; transition: none; animation: none; } }
+.section-num {
+  font-family: var(--font-mono, monospace); font-size: .7rem; font-weight: 600;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin-bottom: .3rem;
+}
+.section-heading {
+  font-family: var(--font-display, sans-serif);
+  font-size: clamp(1.25rem, 4vw, 1.9rem); font-weight: 500; letter-spacing: -0.02em;
+  color: var(--ink); margin-bottom: 1rem; padding-bottom: .5rem;
+  border-bottom: 2px solid var(--accent);
+}
+.section-subtitle { font-size: .9rem; color: var(--ink-55); margin-top: -.5rem; margin-bottom: 1rem; }
+.widget { margin-bottom: 1.5rem; }
+
+/* ── Part dividers ── */
+.section.part-header { border-top: 2px solid var(--accent); padding-top: 2.5rem; margin-top: 4rem; }
+.section.part-header .section-heading {
+  font-size: clamp(28px, 3.5vw, 40px); color: var(--accent); border-bottom-color: transparent;
+}
+
+/* ── Footer ── */
+.doc-footer {
+  border-top: 1px solid var(--border); padding: 1rem 2.5rem;
+  font-size: .78rem; color: var(--ink-20);
+  display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem;
+}
+
+/* ── Modal ── */
+#modal-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,.7);
+  backdrop-filter: blur(4px); z-index: 200;
+  opacity: 0; pointer-events: none; transition: opacity 300ms ease;
+}
+#modal-backdrop.open { opacity: 1; pointer-events: auto; }
+#detail-modal {
+  position: fixed; top: 0; right: 0; bottom: 0;
+  width: min(480px, 95vw); background: var(--surface);
+  border-left: 1px solid var(--border); z-index: 201;
+  display: flex; flex-direction: column;
+  transform: translateX(100%); transition: transform 300ms ease; overflow: hidden;
+}
+#detail-modal.open { transform: translateX(0); }
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1rem 1.25rem; border-bottom: 2px solid var(--accent); flex-shrink: 0; gap: .75rem;
+}
+#modal-title { font-family: var(--font-display, sans-serif); font-weight: 600; font-size: 1rem; color: var(--ink); }
+.modal-close {
+  background: transparent; border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 4px); color: var(--ink-55);
+  cursor: pointer; font-size: 1rem; line-height: 1; padding: .25rem .5rem;
+  flex-shrink: 0; transition: var(--transition, all .2s);
+}
+.modal-close:hover { color: var(--danger); border-color: var(--danger); }
+.modal-body { padding: 1.25rem; overflow-y: auto; flex: 1; }
+.modal-field { margin-bottom: .75rem; }
+.modal-field-label {
+  font-size: .7rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--ink-55); margin-bottom: .2rem;
+}
+.modal-field-value { font-size: .87rem; color: var(--ink); }
+
+/* ── Print ── */
+@media print {
+  .sidebar, .topbar, #modal-backdrop, #detail-modal { display: none !important; }
+  .main-wrap { display: block; }
+  .content { padding: 1rem; }
+  .section { opacity: 1; transform: none; transition: none; break-inside: avoid; }
+}
+
+/* ── Responsive ── */
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .content { padding: 1.5rem 1.75rem; max-width: 100%; }
+  .doc-header { padding: 1.5rem 1.75rem 1.25rem; }
+  .doc-footer { padding: 1rem 1.75rem; }
+  .section { margin-bottom: 3rem; }
+  .flow-step { min-width: 80px; padding: .5rem .75rem; font-size: .8rem; }
+  .flow-step.decision { width: 60px; height: 60px; }
+  .chart-container { max-width: 100%; }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  /* Sidebar off-canvas */
+  .sidebar {
+    position: fixed; z-index: 150; height: 100vh; top: 0;
+    transform: translateX(-100%);
+  }
+  .sidebar.open { transform: translateX(0); box-shadow: 4px 0 24px rgba(0,0,0,.25); }
+  .hamburger-btn { display: flex; }
+  .content { padding: 1rem; max-width: 100%; }
+  .doc-header { padding: 1.25rem 1rem 1rem; }
+  .topbar-meta { display: none; }
+
+  /* Touch targets — Apple HIG minimum 44×44 */
+  .topbar-btn { min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; }
+
+  /* Typography */
+  .doc-title { font-size: clamp(1.75rem, 6vw, 2.5rem); }
+
+  /* Spacing */
+  .section { margin-bottom: 2.5rem; scroll-margin-top: 3.5rem; }
+  .doc-footer { padding: .75rem 1rem; }
+
+  /* KPI cards → 2 columns */
+  .kpi-row { gap: .5rem; }
+  .kpi-card { min-width: 0; flex: 1 1 calc(50% - .25rem); }
+
+  /* Cards → 1 column, reduced padding */
+  .card-grid { grid-template-columns: 1fr; gap: .75rem; }
+  .card-item { padding: 1rem; }
+  .prose-card { padding: 1rem 1.25rem; }
+  .pull-quote { padding: 1rem 1.25rem; font-size: 1rem; }
+
+  /* Flow diagram → vertical */
+  .flow-diagram { flex-direction: column; align-items: stretch; }
+  .flow-step { min-width: 0; width: 100%; }
+  .flow-step.decision { transform: none; width: 100%; height: auto; border-radius: var(--radius, 8px); padding: .6rem 1rem; }
+  .flow-step.decision .flow-label { transform: none; font-size: .8rem; }
+  .flow-arrow { transform: rotate(90deg); align-self: center; }
+
+  /* Tables — smaller padding and font */
+  .data-table th, .data-table td { padding: .4rem .5rem; font-size: .75rem; }
+  .data-table th { font-size: .65rem; }
+
+  /* Tree — reduced indent */
+  .tree-node { margin-left: .5rem; }
+
+  /* Checklist — meta wraps to new line */
+  .checklist-item { flex-wrap: wrap; }
+  .item-meta { margin-left: 0; padding-left: 1.75rem; width: 100%; }
+
+  /* Tabs — horizontal scroll instead of wrap */
+  .tabs-nav { overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
+  .tab-btn { white-space: nowrap; flex-shrink: 0; padding: .5rem .75rem; font-size: .8rem; }
+
+  /* Charts — full width on mobile */
+  .chart-container,
+  .chart-container--doughnut,
+  .chart-container--bar,
+  .chart-container--scurve,
+  .chart-container--bubble,
+  .chart-container--gantt,
+  .chart-container--risk { max-width: 100%; }
+
+  /* Filter bar — horizontal scroll */
+  .filter-bar { overflow-x: auto; flex-wrap: nowrap; padding-bottom: .25rem; }
+  .filter-btn { flex-shrink: 0; }
+
+  /* Definition list */
+  .def-entry { padding: .75rem 1rem; }
+
+  /* Code block */
+  .code-block-wrap pre { padding: .75rem 1rem; font-size: .78rem; }
+
+  /* Figure */
+  .figure-wrap { padding: 1rem; }
+
+  /* Modal full-width */
+  #detail-modal { width: 100vw; }
+}
+
+/* Small phone */
+@media (max-width: 480px) {
+  /* KPI → 1 column */
+  .kpi-card { flex: 1 1 100%; }
+  .kpi-card .kpi-label { font-size: .65rem; }
+
+  /* Minimal padding */
+  .content { padding: .75rem; max-width: 100%; }
+  .doc-header { padding: 1rem .75rem .75rem; }
+
+  /* Compact sections */
+  .section { margin-bottom: 2rem; }
+  .section-num { font-size: .6rem; }
+
+  /* Compact topbar */
+  .topbar { padding: 0 .75rem; height: 44px; }
+  .topbar-title { font-size: 12px; }
+  .status-badge { font-size: .65rem; padding: .1rem .4rem; }
+
+  /* Minimal tree indent */
+  .tree-node { margin-left: .35rem; }
+  .tree-node > details > summary { font-size: .8rem; }
+  .tree-leaf { font-size: .78rem; padding-left: 1.2rem; }
+
+  /* Smaller checklist ring */
+  .progress-ring { width: 48px; height: 48px; }
+  .ring-label .ring-pct { font-size: 1rem; }
+  .ring-label { font-size: .75rem; }
+
+  /* Vertical footer */
+  .doc-footer { flex-direction: column; font-size: .7rem; padding: .5rem .75rem; }
+}
+
+/* ── Widget-specific CSS (agent-injected per widget type used) ── */
+{{WIDGET_CSS}}
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <nav class="sidebar" id="sidebar">
+      <div class="sidebar-inner">
+        <div class="sidebar-brand">{{DOC_TITLE}}</div>
+        <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+{{SIDEBAR_NAV}}
+      </div>
+    </nav>
+    <div class="main-wrap">
+      <div class="topbar" id="topbar">
+        <div class="topbar-left">
+          <button class="topbar-btn hamburger-btn" id="hamburger" onclick="toggleSidebar()" title="Menu" aria-label="Toggle sidebar">&#9776;</button>
+          <span class="topbar-title">{{TOPBAR_TITLE}}</span>
+          {{TOPBAR_BADGE}}
+        </div>
+        <div class="topbar-right">
+          <div class="topbar-meta">{{TOPBAR_META}}</div>
+          <button class="topbar-btn" onclick="toggleTheme()" title="Toggle light/dark theme" aria-label="Toggle theme">&#127763;</button>
+          <button class="topbar-btn" onclick="window.print()" title="Print" aria-label="Print document">&#128424;</button>
+        </div>
+      </div>
+      <header class="doc-header">
+{{DOC_HEADER}}
+      </header>
+      <main class="content" id="content">
+{{SECTIONS}}
+      </main>
+      <footer class="doc-footer">
+        <span>{{FOOTER_ORG}}</span>
+        <span>{{FOOTER_META}}</span>
+      </footer>
+    </div>
+  </div>
+  <!-- Modal -->
+  <div id="modal-backdrop" onclick="closeModal()"></div>
+  <div id="detail-modal" role="dialog" aria-modal="true">
+    <div class="modal-header">
+      <span id="modal-title"></span>
+      <button class="modal-close" onclick="closeModal()" aria-label="Close">&#10005;</button>
+    </div>
+    <div id="modal-body" class="modal-body"></div>
+  </div>
+  <script>
+/* ── JS Foundation (auto-generated from html-conventions.md Section 5 — do not edit) ── */
+// Restore saved theme on load
+(function() {
+  try {
+    const saved = localStorage.getItem('doc2html_theme');
+    if (saved) document.documentElement.setAttribute('data-theme', saved);
+  } catch(e) {}
+})();
+
+function toggleTheme() {
+  const html = document.documentElement;
+  const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-theme', next);
+  try { localStorage.setItem('doc2html_theme', next); } catch(e) {}
+  if (typeof updateChartColors === 'function') updateChartColors();
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+document.addEventListener('click', function(e) {
+  const sidebar = document.getElementById('sidebar');
+  const hamburger = document.getElementById('hamburger');
+  if (sidebar && sidebar.classList.contains('open') &&
+      !sidebar.contains(e.target) && !hamburger.contains(e.target)) {
+    sidebar.classList.remove('open');
+  }
+});
+
+function openModal(title, html) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').innerHTML = html;
+  document.getElementById('detail-modal').classList.add('open');
+  document.getElementById('modal-backdrop').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal() {
+  document.getElementById('detail-modal').classList.remove('open');
+  document.getElementById('modal-backdrop').classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeModal(); });
+
+function openRowModal(tr) {
+  try {
+    const data = JSON.parse(tr.getAttribute('data-row'));
+    const fields = Object.entries(data)
+      .filter(([k, v]) => v !== '' && v !== null && v !== undefined)
+      .map(([k, v]) =>
+        '<div class="modal-field">' +
+        '<div class="modal-field-label">' + k + '</div>' +
+        '<div class="modal-field-value">' + String(v).replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>' +
+        '</div>'
+      ).join('');
+    openModal(String(data[Object.keys(data)[0]] || 'Details'), fields);
+  } catch(e) {}
+}
+
+function countUp(el, target, dur) {
+  dur = dur || 800;
+  const start = performance.now();
+  const isFloat = target % 1 !== 0;
+  const original = el.textContent;
+  function step(now) {
+    const t = Math.min((now - start) / dur, 1);
+    const ease = t < 0.5 ? 2*t*t : -1 + (4 - 2*t)*t;
+    const v = target * ease;
+    el.textContent = isFloat ? v.toFixed(1) : Math.round(v).toLocaleString();
+    if (t < 1) requestAnimationFrame(step);
+    else el.textContent = original;
+  }
+  requestAnimationFrame(step);
+}
+
+(function() {
+  /* Enable progressive-enhancement animations */
+  document.documentElement.classList.add('js-ready');
+
+  const links    = document.querySelectorAll('.nav-link');
+  const sections = document.querySelectorAll('section.section');
+  const fill     = document.getElementById('progress-fill');
+  const viewed   = new Set();
+  const total    = sections.length;
+
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        viewed.add(e.target.id);
+        links.forEach(l => l.classList.remove('active'));
+        const link = document.querySelector('.nav-link[data-target="' + e.target.id + '"]');
+        if (link) link.classList.add('active');
+        if (fill && total) fill.style.width = Math.round(viewed.size / total * 100) + '%';
+        e.target.querySelectorAll('[data-countup]').forEach(el => {
+          if (!el.dataset.counted) {
+            el.dataset.counted = '1';
+            const val = parseFloat(el.getAttribute('data-countup'));
+            if (!isNaN(val)) countUp(el, val, 800);
+          }
+        });
+      }
+    });
+  }, { threshold: 0.12 });
+  sections.forEach(s => obs.observe(s));
+
+  /* Fallback: if IO hasn't revealed any section after 2s, force all visible.
+     Covers iOS Files viewer, WKWebView quirks, and similar environments. */
+  setTimeout(() => {
+    sections.forEach(s => { if (!s.classList.contains('visible')) s.classList.add('visible'); });
+  }, 2000);
+
+  /* Fallback: trigger countUp for visible sections after CSS fallback fires,
+     covering environments where IO never fires (iOS Files, restrictive WebViews). */
+  setTimeout(() => {
+    sections.forEach(s => {
+      if (s.classList.contains('visible')) {
+        s.querySelectorAll('[data-countup]').forEach(el => {
+          if (!el.dataset.counted) {
+            el.dataset.counted = '1';
+            const val = parseFloat(el.getAttribute('data-countup'));
+            if (!isNaN(val)) countUp(el, val, 800);
+          }
+        });
+      }
+    });
+  }, 2100);
+})();
+
+function sortTable(tableId, colIdx) {
+  const table = document.getElementById(tableId);
+  if (!table) return;
+  const th = table.querySelectorAll('th')[colIdx];
+  const tbody = table.tBodies[0];
+  const rows = Array.from(tbody.rows);
+  const asc = !th.classList.contains('asc');
+  table.querySelectorAll('th').forEach(h => h.classList.remove('asc','desc'));
+  th.classList.add(asc ? 'asc' : 'desc');
+  rows.sort((a, b) => {
+    const ca = a.cells[colIdx], va = ca ? ca.textContent.trim() : '';
+    const cb = b.cells[colIdx], vb = cb ? cb.textContent.trim() : '';
+    const na = parseFloat(va), nb = parseFloat(vb);
+    if (!isNaN(na) && !isNaN(nb)) return asc ? na - nb : nb - na;
+    return asc ? va.localeCompare(vb) : vb.localeCompare(va);
+  });
+  rows.forEach(r => tbody.appendChild(r));
+}
+
+function switchTab(widgetId, tabId) {
+  const widget = document.getElementById(widgetId);
+  if (!widget) return;
+  widget.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  widget.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  const btn = [...widget.querySelectorAll('.tab-btn')].find(
+    b => b.getAttribute('onclick').includes("'" + tabId + "'")
+  );
+  if (btn) btn.classList.add('active');
+  const panel = document.getElementById(widgetId + '-' + tabId);
+  if (panel) panel.classList.add('active');
+}
+
+function updateChecklist(uid, itemId, done) {
+  const item = document.getElementById('ci-' + itemId);
+  if (item) item.classList.toggle('done', done);
+  const key = 'cl_' + uid;
+  let state = {};
+  try { state = JSON.parse(localStorage.getItem(key) || '{}'); } catch(e) {}
+  state[itemId] = done;
+  try { localStorage.setItem(key, JSON.stringify(state)); } catch(e) {}
+  _updateRing(uid);
+}
+function _updateRing(uid) {
+  const widget = document.getElementById(uid);
+  if (!widget) return;
+  const items = widget.querySelectorAll('.checklist-item');
+  const done  = widget.querySelectorAll('.checklist-item.done').length;
+  const total = items.length;
+  const pct   = total ? Math.round(done / total * 100) : 0;
+  const ring  = document.getElementById(uid + '-ring');
+  const pctEl = document.getElementById(uid + '-pct');
+  const circ  = 150.8;
+  if (ring) ring.style.strokeDashoffset = circ - (circ * pct / 100);
+  if (pctEl) pctEl.textContent = pct + '%';
+}
+function toggleChecklistGroup(labelEl) {
+  labelEl.closest('.checklist-group').classList.toggle('collapsed');
+}
+// Restore on load
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.checklist-widget').forEach(function(widget) {
+    const uid = widget.id;
+    let state = {};
+    try { state = JSON.parse(localStorage.getItem('cl_' + uid) || '{}'); } catch(e) {}
+    Object.entries(state).forEach(([itemId, done]) => {
+      const item = document.getElementById('ci-' + itemId);
+      if (item) {
+        item.classList.toggle('done', done);
+        const cb = item.querySelector('input[type=checkbox]');
+        if (cb) cb.checked = done;
+      }
+    });
+    _updateRing(uid);
+  });
+});
+
+function filterRisks(uid, level) {
+  const filterBar = document.getElementById(uid + '-filters');
+  if (filterBar) {
+    filterBar.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    const active = [...filterBar.querySelectorAll('.filter-btn')].find(
+      b => b.getAttribute('onclick').includes("'" + level + "'")
+    );
+    if (active) active.classList.add('active');
+  }
+  const table = document.getElementById(uid + '-table');
+  if (!table) return;
+  table.querySelectorAll('tbody tr').forEach(tr => {
+    tr.style.display = (level === 'all' || tr.getAttribute('data-level') === level) ? '' : 'none';
+  });
+}
+
+function expandAllTree(uid) {
+  const tree = document.getElementById(uid);
+  if (tree) tree.querySelectorAll('details').forEach(d => d.open = true);
+}
+function collapseAllTree(uid) {
+  const tree = document.getElementById(uid);
+  if (tree) tree.querySelectorAll('details').forEach(d => d.open = false);
+}
+
+/* ── Chart.js Init (agent-injected — only if charts are used) ── */
+{{CHART_INIT}}
+  </script>
+</body>
+</html>
