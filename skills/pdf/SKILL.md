@@ -1,3 +1,11 @@
+---
+name: pdf
+description: >
+  Guidelines for producing, reading, and manipulating .pdf files using fpdf2
+  and pypdf. Covers table/text PDFs, reports, reading/merging existing PDFs,
+  and math-heavy academic documents.
+---
+
 # Skill: PDF Document
 
 Guidelines for producing, reading, and manipulating `.pdf` files. Primary approach

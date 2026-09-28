@@ -1,3 +1,10 @@
+---
+name: web-search
+description: >
+  Guidelines for searching the web for real-world photography and imagery,
+  filtering by license, and resolving ambiguous entity references.
+---
+
 # Skill: Web Search & Image Sourcing
 
 Guidelines for searching the web for real-world photography and imagery, filtering by license, and resolving ambiguous entity references. Covers query construction, candidate selection, license filtering, and fallback to AI generation.
