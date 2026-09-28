@@ -1,3 +1,11 @@
+---
+name: docx
+description: >
+  Guidelines for reading, writing, and modifying .docx Word documents using
+  python-docx. Covers creating documents, styling, tables, images,
+  headers/footers, and helper patterns for agents.
+---
+
 # Skill: DOCX Document
 
 Guidelines for reading, writing, and modifying `.docx` Word documents using `python-docx`.
